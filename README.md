@@ -22,9 +22,7 @@ bundle exec rubocop examples/
 ## Directory
 
 ```
-examples/
- ├── good/  # Should pass with no offenses
- └── bad/   # Should trigger warnings
+examples/  # Example Ruby code to test the style configuration
 ```
 
 ## Join the Discussion

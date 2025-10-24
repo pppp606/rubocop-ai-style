@@ -4,17 +4,21 @@
 # Each rule below includes rationale and potential trade-offs for discussion.
 # ===============================================
 
+AllCops:
+  NewCops: enable
+  # Enable new cops by default to keep up with RuboCop improvements
+
 # Layout: visual formatting only — mostly irrelevant for AI.
 Layout/LineLength:
   Enabled: false
   # Long lines do not affect AI parsing.
   # → reconsider? Some human reviewers still rely on line breaks for diffs.
 
-Layout/AlignHash:
+Layout/HashAlignment:
   Enabled: false
   # Alignment adds visual symmetry but no semantic meaning for AI.
 
-Layout/AlignParameters:
+Layout/ParameterAlignment:
   Enabled: false
   # Same as above — indentation is cosmetic.
   # → reconsider? May help humans spot argument alignment visually.
@@ -70,21 +74,23 @@ Style/SymbolArray:
   # Explicit arrays are clearer for AI tokenization.
 
 # Explicitness boosters
-Style/KeywordArguments:
-  Enabled: true
-  EnforcedStyle: required
-  # Enforce keyword args for clarity.
-  # AI can infer meaning from names rather than position.
-  # → reconsider? adds verbosity for short helpers.
+# Style/KeywordArguments:
+#   Enabled: true
+#   EnforcedStyle: required
+#   # Enforce keyword args for clarity.
+#   # AI can infer meaning from names rather than position.
+#   # → reconsider? adds verbosity for short helpers.
+#   # NOTE: This cop does not exist in RuboCop 1.81.6
 
 Style/ExplicitBlockArgument:
   Enabled: true
   # Always name block args explicitly (&block).
   # Helps AI maintain call structure.
 
-Style/ExplicitStructArgument:
-  Enabled: true
-  # Clarifies hash-like struct arguments; avoids implicit splats.
+# Style/ExplicitStructArgument:
+#   Enabled: true
+#   # Clarifies hash-like struct arguments; avoids implicit splats.
+#   # NOTE: This cop does not exist in RuboCop 1.81.6
 
 Style/NumericPredicate:
   Enabled: true
