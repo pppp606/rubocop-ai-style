@@ -1,147 +1,165 @@
 # ===============================================
 # RuboCop AI-First Style (Discussion Draft)
-# Purpose: improve clarity and consistency for AI-generated and AI-read code.
-# Each rule below includes rationale and potential trade-offs for discussion.
+# Purpose: balance clarity for AI-generated/AI-reviewed code with human review.
+# Each rule includes rationale and trade-offs for collaborative discussion.
+# -----------------------------------------------
+# Reference snippet (used when validating these rules):
+# class SampleService
+#   def call(user_id:, logger: Logger.new($stdout), &block)
+#     return unless block
+#
+#     result = block.call(user_id)
+#     logger.info("result=#{result}") if result.positive?
+#     result
+#   end
+# end
+# -----------------------------------------------
 # ===============================================
 
 AllCops:
   NewCops: enable
-  # Enable new cops by default to keep up with RuboCop improvements
+  # Keep up with RuboCop improvements so regressions are caught quickly.
 
-# Layout: visual formatting only — mostly irrelevant for AI.
+# Layout: formatting choices that impact readability for humans and diff tools.
 Layout/LineLength:
-  Enabled: false
-  # Long lines do not affect AI parsing.
-  # → reconsider? Some human reviewers still rely on line breaks for diffs.
+  Max: 120
+  # Long lines are acceptable for AI, but extremely long diffs burden reviewers.
+  # Max 120 keeps context compact while avoiding aggressive wrapping.
 
 Layout/HashAlignment:
   Enabled: false
-  # Alignment adds visual symmetry but no semantic meaning for AI.
+  # Visual alignment is optional; AI does not benefit and humans can choose case-by-case.
 
 Layout/ParameterAlignment:
-  Enabled: false
-  # Same as above — indentation is cosmetic.
-  # → reconsider? May help humans spot argument alignment visually.
+  Enabled: true
+  EnforcedStyle: with_fixed_indentation
+  # Aligning parameters on wrapped method definitions helps humans scan arguments quickly.
 
 Layout/TrailingWhitespace:
   Enabled: true
-  # Keep clean diffs and avoid invisible characters.
-  # Harmless for AI but useful for version control.
+  # Prevent invisible characters from creating noisy diffs.
 
 Layout/IndentationWidth:
   Enabled: true
-  # Structural indentation helps both human readers and some AST parsers.
+  Width: 2
+  # Explicit 2-space indentation matches Ruby conventions and keeps blocks shallow for AI.
 
 Layout/SpaceAroundOperators:
   Enabled: true
-  # Keeps tokens visually separated; aids tokenization.
+  # Keeps tokens visually separated and helps models tokenize expressions.
 
 # Style: emphasize explicitness and semantic stability.
 Style/StringLiterals:
   EnforcedStyle: double_quotes
-  # Consistency only. AI can handle both.
-  # → reconsider? single_quotes reduce escaping noise.
+  # Default to double quotes for consistency. Humans can opt-in to single quotes via disable.
 
 Style/Lambda:
   Enabled: false
-  # Allow both -> and lambda keywords. AI can disambiguate either form.
+  # Allow both -> and lambda keywords so AI can mirror existing patterns.
 
 Style/Documentation:
   Enabled: false
-  # Skip mandatory top-level comments.
-  # AI can summarize code if needed; humans may prefer optional docs.
+  # Avoid mandatory class/module docs; prefer focused human-written summaries when needed.
 
 Style/GuardClause:
-  Enabled: false
-  # No forced early returns. Keeps control flow flexible for generation.
-  # → reconsider? shorter branching may help AI chunk reasoning.
+  Enabled: true
+  # Encourage early returns for simpler branching. Helps both AI chunking and human reasoning.
 
 Style/HashSyntax:
   EnforcedStyle: ruby19
-  # Modern syntax is widely represented in AI training data.
+  # Modern hash syntax is pervasive in training data and widely preferred by reviewers.
 
 Style/TrailingCommaInArrayLiteral:
-  Enabled: false
+  Enabled: true
+  EnforcedStyleForMultiline: consistent_comma
+  # Trailing commas stabilize diffs when items change order.
+
 Style/TrailingCommaInHashLiteral:
-  Enabled: false
-  # Trailing commas are syntactic noise for most LLMs.
+  Enabled: true
+  EnforcedStyleForMultiline: consistent_comma
+  # Same rationale as arrays; improves human review with minimal AI impact.
 
 Style/WordArray:
   Enabled: false
+  # Prefer explicit arrays so literal types remain obvious to both AI and humans.
+
 Style/SymbolArray:
   Enabled: false
-  # %w/%i reduce verbosity but hide literal types.
-  # Explicit arrays are clearer for AI tokenization.
+  # Same rationale as WordArray; %i hides literal type information.
 
 # Explicitness boosters
 # Style/KeywordArguments:
 #   Enabled: true
 #   EnforcedStyle: required
 #   # Enforce keyword args for clarity.
-#   # AI can infer meaning from names rather than position.
-#   # → reconsider? adds verbosity for short helpers.
-#   # NOTE: This cop does not exist in RuboCop 1.81.6
+#   # NOTE: This cop does not exist in RuboCop 1.81.6.
 
 Style/ExplicitBlockArgument:
   Enabled: true
-  # Always name block args explicitly (&block).
-  # Helps AI maintain call structure.
+  # Always name block args explicitly (&block) to preserve invocation structure.
 
 # Style/ExplicitStructArgument:
 #   Enabled: true
-#   # Clarifies hash-like struct arguments; avoids implicit splats.
-#   # NOTE: This cop does not exist in RuboCop 1.81.6
+#   # Clarifies struct arguments; avoid implicit splats.
+#   # NOTE: This cop does not exist in RuboCop 1.81.6.
 
 Style/NumericPredicate:
   Enabled: true
-  # Prefer `zero?`, `positive?` for intent clarity.
+  # Prefer `zero?`, `positive?`, etc., to surface intent.
 
 Style/NegatedIf:
   Enabled: true
-  # Prefer `unless` to `if !condition`.
-  # → reconsider? some models misinterpret nested `unless`.
+  # Prefer `unless` instead of `if !condition` for clearer phrasing.
 
-# Metrics: relaxed to allow AI-generated verbosity.
+# Metrics: relaxed to accommodate AI-generated verbosity without harming review.
 Metrics/MethodLength:
   Max: 30
+
 Metrics/BlockLength:
   Max: 50
+
 Metrics/AbcSize:
   Max: 30
+
 Metrics/ClassLength:
   Max: 200
-  # → reconsider? long contexts may confuse smaller models.
 
 # Naming: maintain consistent token patterns.
 Naming/VariableName:
   Enabled: true
   EnforcedStyle: snake_case
+
 Naming/MethodName:
   Enabled: true
   EnforcedStyle: snake_case
+
 Naming/ConstantName:
   Enabled: true
+
 Naming/FileName:
   Enabled: true
-  # snake_case consistency improves model recognition and retrieval.
 
 # Lint & Security: essential for correctness.
 Lint/UnusedMethodArgument:
   Enabled: true
+
 Lint/UselessAssignment:
   Enabled: true
+
 Lint/AssignmentInCondition:
   Enabled: true
+
 Lint/RescueException:
   Enabled: true
+
 Lint/EmptyWhen:
   Enabled: true
-  # Retain standard safety nets — these affect runtime behavior.
 
 Security/Eval:
   Enabled: true
+
 Security/Open:
   Enabled: true
+
 Security/MarshalLoad:
   Enabled: true
-  # Security cops remain critical — prevent AI from generating unsafe code.

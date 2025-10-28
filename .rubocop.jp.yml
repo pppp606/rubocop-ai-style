@@ -1,9 +1,9 @@
 # ===============================================
 # RuboCop AI-First Style（検討用ドラフト）
-# 目的: AI が生成し読み取るコードの明瞭性と一貫性を高める。
-# 以下の各ルールには、議論用の根拠とトレードオフを記載。
+# 目的: AI が生成・レビューするコードと人間レビューの双方で明瞭さを保つ。
+# 各ルールには議論用の根拠とトレードオフを記載。
 # -----------------------------------------------
-# サンプルコード（議論時の参照用）
+# 参照スニペット（ルール検証時の共通例）
 # class SampleService
 #   def call(user_id:, logger: Logger.new($stdout), &block)
 #     return unless block
@@ -18,257 +18,148 @@
 
 AllCops:
   NewCops: enable
-  # RuboCop の改善を取り込むため新しい Cop を既定で有効化。
-  # サンプル: 新しい Cop が追加されても `bundle exec rubocop` で検出される。
+  # RuboCop の改善を取り込み、退行を早期に検出する。
 
-# Layout: 見た目だけの書式設定 — AI にとってはほぼ無関係。
+# Layout: 人間レビューと差分ツールの読みやすさに影響するフォーマット。
 Layout/LineLength:
-  Enabled: false
-  # 長い行でも AI の解析には影響しない。
-  # → 要再検討？ 一部の人間レビューでは差分確認に改行が必要。
-  # サンプル:
-  #   long_sentence = "この文字列は非常に長く、途中で改行せずにそのまま続けます"
+  Max: 120
+  # 長い行は AI にとって問題ないが、極端な長さはレビュー負荷になる。
+  # 120 文字に抑えることで、過度な改行を避けつつ文脈を保つ。
 
 Layout/HashAlignment:
   Enabled: false
-  # 整列は視覚的な対称性を生むが AI に意味情報を与えない。
-  # サンプル:
-  #   options = {
-  #     host: "localhost",
-  #   port: 3000
-  #   }
-  #   # ↑ `port` 行のインデントが揃っていなくても許容
+  # 視覚的整列は任意。AI には利得がなく、人間はケースごとに判断できる。
 
 Layout/ParameterAlignment:
-  Enabled: false
-  # 上記と同じくインデントは見た目のみの効果。
-  # → 要再検討？ 引数の揃えは人間が視覚的に確認しやすい場合がある。
-  # サンプル:
-  #   def initialize(name,
-  #     email,
-  #         role)
-  #   end
-  #   # ↑ 引数ごとの揃えを求めない例
+  Enabled: true
+  EnforcedStyle: with_fixed_indentation
+  # 複数行に折り返されたメソッド引数を揃えると、人間が意図を追いやすい。
 
 Layout/TrailingWhitespace:
   Enabled: true
-  # 差分をきれいに保ち、不可視文字を避ける。
-  # AI に害はないがバージョン管理に有用。
-  # サンプル:
-  #   puts "hello"␣
-  #   # ↑ 行末の空白を削除する
+  # 不可視文字によるノイズを防ぎ、差分をクリーンに保つ。
 
 Layout/IndentationWidth:
   Enabled: true
-  # 構造的なインデントは人間と一部 AST パーサの双方を助ける。
-  # サンプル:
-  #   if condition
-  #     do_something
-  #   end
+  Width: 2
+  # 明示的に 2 スペースを指定し、Ruby 慣習と浅いネストを維持する。
 
 Layout/SpaceAroundOperators:
   Enabled: true
-  # トークンを視覚的に分離し、トークナイズを支援する。
-  # サンプル:
-  #   total = price + tax
+  # トークンを視覚的に分離し、モデルのトークナイズを助ける。
 
-# Style: 明示性と意味的な安定性を重視。
+# Style: 明示性と意味の安定性を重視。
 Style/StringLiterals:
   EnforcedStyle: double_quotes
-  # 目的は一貫性のみ。AI はどちらの引用符も扱える。
-  # → 要再検討？ single_quotes はエスケープのノイズを減らす。
-  # サンプル:
-  #   greeting = "こんにちは"
+  # 一貫性のためにダブルクォートを採用。必要なら個別に single_quotes を許可。
 
 Style/Lambda:
   Enabled: false
-  # -> と lambda の両方を許容。AI はどちらの形式も判別可能。
-  # サンプル:
-  #   handler = ->(event) { process(event) }
-  #   handler = lambda { |event| process(event) }
+  # `->` と `lambda` をともに許容し、既存パターンを再利用しやすくする。
 
 Style/Documentation:
   Enabled: false
-  # トップレベルコメントの必須化を回避。
-  # AI は必要であればコードを要約でき、人間は任意でドキュメント化。
-  # サンプル:
-  #   class PlainClass
-  #     def call; end
-  #   end
+  # クラス/モジュールのコメントを必須化しない。必要に応じて人間が補足。
 
 Style/GuardClause:
-  Enabled: false
-  # 早期 return を強制しない。生成時の制御フローの柔軟性を保つ。
-  # → 要再検討？ 分岐が短いと AI のチャンク化推論を助ける場合がある。
-  # サンプル:
-  #   if user.active?
-  #     perform
-  #   else
-  #     raise "inactive"
-  #   end
+  Enabled: true
+  # 早期 return を推奨し、分岐を簡潔に保つ。AI のチャンク化と人間の推論を助ける。
 
 Style/HashSyntax:
   EnforcedStyle: ruby19
-  # モダンな記法は AI の学習データに広く含まれている。
-  # サンプル:
-  #   user = { name: "AI", age: 3 }
+  # モダンなハッシュ記法は学習データに広く含まれ、人間にも馴染みがある。
 
 Style/TrailingCommaInArrayLiteral:
-  Enabled: false
-  # サンプル:
-  #   languages = ["Ruby", "Python", "Elixir"]
+  Enabled: true
+  EnforcedStyleForMultiline: consistent_comma
+  # 末尾カンマにより要素追加時の差分を安定させる。
+
 Style/TrailingCommaInHashLiteral:
-  Enabled: false
-  # 末尾のカンマは多くの LLM にとって構文上のノイズ。
-  # サンプル:
-  #   config = {
-  #     retries: 3,
-  #     timeout: 5
-  #   }
+  Enabled: true
+  EnforcedStyleForMultiline: consistent_comma
+  # 配列と同様の理由。人間レビューでの差分が明確になる。
 
 Style/WordArray:
   Enabled: false
-  # サンプル:
-  #   words = ["foo", "bar", "baz"]
+  # 明示的な配列を優先し、リテラル型を AI と人間が把握しやすくする。
+
 Style/SymbolArray:
   Enabled: false
-  # %w/%i は冗長性を減らすがリテラルの型を隠してしまう。
-  # 明示的な配列の方が AI のトークナイズにとって明快。
-  # サンプル:
-  #   roles = [:admin, :editor, :viewer]
+  # %i も非推奨。WordArray と同じ理由で型情報を隠さない。
 
 # Explicitness boosters
 # Style/KeywordArguments:
 #   Enabled: true
 #   EnforcedStyle: required
-#   # 明示的なキーワード引数を強制して意図を明確化。
-#   # AI は位置ではなく名前から意味を推定できる。
-#   # → 要再検討？ 短いヘルパーでは冗長になる。
+#   # キーワード引数を強制して意図を明確化。
 #   # 注意: この Cop は RuboCop 1.81.6 には存在しない。
 
 Style/ExplicitBlockArgument:
   Enabled: true
-  # ブロック引数は常に明示的に (&block) と命名。
-  # AI が呼び出し構造を保持しやすくする。
-  # サンプル:
-  #   def wrap(&block)
-  #     yield_result = block.call
-  #     [yield_result, block]
-  #   end
+  # ブロック引数は常に明示的に (&block) と命名し、呼び出し構造を保つ。
 
 # Style/ExplicitStructArgument:
 #   Enabled: true
-#   # ハッシュ風の struct 引数を明示し、暗黙的なスプラットを避ける。
+#   # struct 引数を明示して暗黙のスプラットを避ける。
 #   # 注意: この Cop は RuboCop 1.81.6 には存在しない。
 
 Style/NumericPredicate:
   Enabled: true
-  # `zero?` や `positive?` を使って意図を明確にする。
-  # サンプル:
-  #   return if amount.zero?
+  # `zero?` や `positive?` などで意図を明確にする。
 
 Style/NegatedIf:
   Enabled: true
-  # `if !condition` より `unless` を優先。
-  # → 要再検討？ 一部モデルはネストした `unless` を誤解する。
-  # サンプル:
-  #   return unless user.active?
+  # `if !condition` より `unless` を優先して可読性を上げる。
 
-# Metrics: AI が生成する冗長さに合わせて緩めに設定。
+# Metrics: AI が生成する冗長さを許容しつつレビューに配慮。
 Metrics/MethodLength:
   Max: 30
-  # サンプル:
-  #   def short_method
-  #     do_one
-  #     do_two
-  #   end
+
 Metrics/BlockLength:
   Max: 50
-  # サンプル:
-  #   task :build do
-  #     compile
-  #     package
-  #   end
+
 Metrics/AbcSize:
   Max: 30
-  # サンプル:
-  #   value = (a + b) - c
+
 Metrics/ClassLength:
   Max: 200
-  # → 要再検討？ 長いコンテキストは小さいモデルを混乱させる可能性。
-  # サンプル:
-  #   class CompactClass
-  #     def run; end
-  #   end
 
 # Naming: 一貫したトークンパターンを維持。
 Naming/VariableName:
   Enabled: true
   EnforcedStyle: snake_case
-  # サンプル:
-  #   user_name = "alice"
+
 Naming/MethodName:
   Enabled: true
   EnforcedStyle: snake_case
-  # サンプル:
-  #   def fetch_user; end
+
 Naming/ConstantName:
   Enabled: true
-  # サンプル:
-  #   MAX_RETRY = 3
+
 Naming/FileName:
   Enabled: true
-  # snake_case の一貫性はモデルの認識と検索性を高める。
-  # サンプル:
-  #   ファイル名: user_profile.rb
 
 # Lint & Security: 正確性のために不可欠。
 Lint/UnusedMethodArgument:
   Enabled: true
-  # サンプル:
-  #   def call(_user)
-  #     perform
-  #   end
+
 Lint/UselessAssignment:
   Enabled: true
-  # サンプル:
-  #   value = compute
-  #   value
+
 Lint/AssignmentInCondition:
   Enabled: true
-  # サンプル:
-  #   if (count = fetch_count)
-  #     puts count
-  #   end
+
 Lint/RescueException:
   Enabled: true
-  # サンプル:
-  #   begin
-  #     risky
-  #   rescue StandardError => e
-  #     log(e)
-  #   end
+
 Lint/EmptyWhen:
   Enabled: true
-  # 標準的な安全網を保持 — 実行時の挙動に影響する。
-  # サンプル:
-  #   case status
-  #   when :ready
-  #     proceed
-  #   when :pending
-  #     wait
-  #   end
 
 Security/Eval:
   Enabled: true
-  # サンプル:
-  #   eval(params[:code]) # ← 危険
+
 Security/Open:
   Enabled: true
-  # サンプル:
-  #   File.open(user_input, "w") # ← 確認なしで開くと危険
+
 Security/MarshalLoad:
   Enabled: true
-  # セキュリティ Cop は重要 — AI が安全でないコードを生成するのを防ぐ。
-  # サンプル:
-  #   Marshal.load(untrusted_data) # ← 危険
